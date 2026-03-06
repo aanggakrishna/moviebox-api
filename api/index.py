@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Menambahkan root folder (src) ke Python path agar bisa mengimport moviebox_api di lingkungan Vercel
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from moviebox_api.requests import Session
@@ -13,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def get_session(request: Request):
+async def get_session(request: Request):
     """Dependency runtime-safe untuk koneksi proxy/serverless.
     Di HTTPX versi baru, inisialisasi langsung obj AsyncClient() dari luar siklus async bisa error.
     """
