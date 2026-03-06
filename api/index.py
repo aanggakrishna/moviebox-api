@@ -1,8 +1,25 @@
 import sys
 import os
+import types
+import logging
 
 # Menambahkan root folder (src) ke Python path agar bisa mengimport moviebox_api di lingkungan Vercel
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
+# Pre-register moviebox_api as a minimal package in sys.modules BEFORE any
+# submodule imports.  This prevents Python from executing the full __init__.py
+# which eagerly imports throttlebuster, download, extras/auto — none of which
+# are needed by the API and whose absence causes FUNCTION_INVOCATION_FAILED on
+# Vercel.
+#
+# The submodules we *do* need (constants, helpers, exceptions, models, _bases,
+# requests, core) only rely on `moviebox_api.logger`, so we provide that here.
+if 'moviebox_api' not in sys.modules:
+    _pkg = types.ModuleType('moviebox_api')
+    _pkg.__path__ = [os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')), 'moviebox_api')]
+    _pkg.__package__ = 'moviebox_api'
+    _pkg.logger = logging.getLogger('moviebox_api')
+    sys.modules['moviebox_api'] = _pkg
 
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
